@@ -1,141 +1,25 @@
 import { useEffect, useState } from 'react';
-import { registerUser } from '../../services/authService';
-import { getAllUsers, getUserBooks, removeBook, removeUserWithBooks } from '../../services/adminService';
-import type { IUser, IBook } from '../../types';
-import iziToast from 'izitoast';
 import Spinner from '../../components/ui/Spinner';
+import { useAdminActions } from './hooks/useAdminActions'; 
 
 const AdminPage = () => {
-  const [users, setUsers] = useState<IUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedUserBooks, setSelectedUserBooks] = useState<IBook[] | null>(null);
-  const [userNameForModal, setUserNameForModal] = useState('');
-  
-  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const { 
+    users, loading, selectedUserBooks, userNameForModal, isAddUserOpen,
+    setSelectedUserBooks, setIsAddUserOpen, loadUsers, showUserBooks, 
+    deleteBookAction, deleteUserFullyAction, createUserAction 
+  } = useAdminActions();
+
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPass, setNewUserPass] = useState('');
   const [newUserName, setNewUserName] = useState('');
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await getAllUsers(); 
-        setUsers(data);
-      } catch (error) {
-        console.error(error);
-        iziToast.error({ title: 'Помилка', message: 'Не вдалося завантажити користувачів' });
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
+    loadUsers();
   }, []);
 
-  const handleShowBooks = async (uid: string, userEmail: string) => {
-    setUserNameForModal(userEmail);
-    try {
-      const books = await getUserBooks(uid); 
-      setSelectedUserBooks(books);
-    } catch (error) {
-      console.error(error);
-      iziToast.error({ title: 'Помилка', message: 'Не вдалося завантажити книги' });
-    }
-  };
-
-  const handleDeleteBook = (bookId: string) => {
-    iziToast.question({
-      timeout: 20000,
-      close: false,
-      overlay: true,
-      displayMode: 1,
-      id: 'delete-book',
-      zindex: 9999,
-      title: 'Видалити?',
-      message: 'Видалити цю книгу назавжди?',
-      position: 'center',
-      buttons: [
-        ['<button><b>Видалити</b></button>', async function (instance, toast) {
-          instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-          
-          try {
-            await removeBook(bookId); 
-            setSelectedUserBooks(prev => prev ? prev.filter(b => b.id !== bookId) : null);
-            iziToast.info({ title: 'Видалено', message: 'Книгу успішно видалено', position: 'topRight' });
-          } catch (error) {
-            console.error(error);
-            iziToast.error({ title: 'Помилка', message: 'Не вдалося видалити книгу' });
-          }
-        }, true],
-        ['<button>Скасувати</button>', function (instance, toast) {
-          instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-        }, false]
-      ]
-    });
-  };
-
-  const handleDeleteUserFully = (uid: string) => {
-    iziToast.question({
-      timeout: 20000,
-      close: false,
-      overlay: true,
-      displayMode: 1,
-      id: 'delete-user',
-      zindex: 999,
-      title: 'УВАГА!',
-      message: 'Видалити користувача І ВСІ ЙОГО КНИГИ?',
-      position: 'center',
-      buttons: [
-        ['<button><b>ВИДАЛИТИ ВСЕ</b></button>', async function (instance, toast) {
-          instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-          
-          try {
-            const deletedBooksCount = await removeUserWithBooks(uid);
-            
-            setUsers(prev => prev.filter(u => u.uid !== uid));
-            iziToast.success({ 
-              title: 'Готово!', 
-              message: `Користувача та ${deletedBooksCount} його книг видалено.`, 
-              position: 'topRight' 
-            });
-          } catch (error) {
-            console.error(error);
-            iziToast.error({ title: 'Помилка', message: 'Не вдалося видалити користувача' });
-          }
-        }, true],
-        ['<button>Скасувати</button>', function (instance, toast) {
-          instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-        }, false]
-      ]
-    });
-  };
-
-  const handleCreateUser = (e: React.FormEvent) => {
+  const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    iziToast.question({
-      timeout: 20000,
-      close: false,
-      overlay: true,
-      displayMode: 1,
-      id: 'create-user',
-      zindex: 999,
-      title: 'Увага',
-      message: 'Вас буде автоматично розлогінено. Створити?',
-      position: 'center',
-      buttons: [
-        ['<button><b>Так</b></button>', async function (instance, toast) {
-          instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-          try {
-            await registerUser(newUserEmail, newUserPass, newUserName);
-            iziToast.success({ title: 'Успішно!', message: 'Переадресація...', position: 'topCenter' });
-          } catch (error) {
-            if (error instanceof Error) iziToast.error({ title: 'Помилка', message: error.message });
-          }
-        }, true],
-        ['<button>Скасувати</button>', function (instance, toast) {
-          instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-        }, false]
-      ]
-    });
+    createUserAction(newUserEmail, newUserPass, newUserName);
   };
 
   if (loading) return <Spinner />;
@@ -168,8 +52,8 @@ const AdminPage = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                  <button onClick={() => handleShowBooks(user.uid, user.email || '')} className="text-blue-600 hover:text-blue-900 border border-blue-200 px-3 py-1 rounded hover:bg-blue-50">Книги</button>
-                  <button onClick={() => handleDeleteUserFully(user.uid)} className="text-red-600 hover:text-red-900 border border-red-200 px-3 py-1 rounded hover:bg-red-50">Видалити все</button>
+                  <button onClick={() => showUserBooks(user.uid, user.email || '')} className="text-blue-600 hover:text-blue-900 border border-blue-200 px-3 py-1 rounded hover:bg-blue-50">Книги</button>
+                  <button onClick={() => deleteUserFullyAction(user.uid)} className="text-red-600 hover:text-red-900 border border-red-200 px-3 py-1 rounded hover:bg-red-50">Видалити все</button>
                 </td>
               </tr>
             ))}
@@ -194,7 +78,7 @@ const AdminPage = () => {
                       <img src={book.photoUrl} alt="" className="w-10 h-14 object-cover bg-gray-200 rounded" />
                       <div><p className="font-bold">{book.name}</p><p className="text-xs text-gray-500">{book.author}</p></div>
                     </div>
-                    <button onClick={() => handleDeleteBook(book.id)} className="text-red-600 hover:text-red-800 text-sm font-bold">Видалити</button>
+                    <button onClick={() => deleteBookAction(book.id)} className="text-red-600 hover:text-red-800 text-sm font-bold">Видалити</button>
                   </div>
                 ))}
               </div>
@@ -208,7 +92,7 @@ const AdminPage = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-96">
             <h2 className="text-xl font-bold mb-4">Новий користувач</h2>
-            <form onSubmit={handleCreateUser} className="space-y-4">
+            <form onSubmit={handleCreateSubmit} className="space-y-4">
               <input type="text" placeholder="Ім'я" required className="w-full border p-2 rounded" value={newUserName} onChange={e => setNewUserName(e.target.value)} />
               <input type="email" placeholder="Email" required className="w-full border p-2 rounded" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} />
               <input type="password" placeholder="Пароль" required className="w-full border p-2 rounded" value={newUserPass} onChange={e => setNewUserPass(e.target.value)} />
