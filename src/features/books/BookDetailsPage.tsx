@@ -5,14 +5,13 @@ import { useAuth } from '../../context/AuthContext';
 import type { IBook } from '../../types';
 
 const BookDetailsPage = () => {
-  const { id } = useParams<{ id: string }>(); // Отримуємо ID книги з URL
+  const { id } = useParams<{ id: string }>(); 
   const navigate = useNavigate();
   const { user } = useAuth();
   
   const [book, setBook] = useState<IBook | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Завантаження даних книги
   useEffect(() => {
     const loadBook = async () => {
       if (!id) return;
@@ -28,39 +27,33 @@ const BookDetailsPage = () => {
     loadBook();
   }, [id]);
 
-  // Логіка кнопки "Запросити обмін"
   const handleExchange = () => {
     if (!book || !user) {
       alert("Будь ласка, увійдіть, щоб надіслати запит.");
       return;
     }
 
-    // Формуємо тему та тіло листа
     const subject = `Запит на обмін книги: ${book.name}`;
     const body = `Привіт!\n\nМене зацікавила ваша книга "${book.name}".\n\nЯ пропоную обмін. Мої контакти: ${user.email}\n\nЗ повагою, користувач BookExchange.`;
     
-    // Відкриваємо поштовий клієнт
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
-  // Логіка видалення
   const handleDelete = async () => {
     if (confirm('Ви точно хочете видалити цю книгу?') && id) {
       await deleteBook(id);
-      navigate('/books'); // Повертаємось до списку після видалення
+      navigate('/books');
     }
   };
 
   if (loading) return <div className="text-center mt-10">Завантаження...</div>;
   if (!book) return <div className="text-center mt-10 text-red-500">Книгу не знайдено (404)</div>;
 
-  // Перевірка: це моя книга?
   const isMyBook = user?.uid === book.ownerId;
 
   return (
     <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden flex flex-col md:flex-row mt-6 border border-gray-100">
       
-      {/* Ліва колонка: Фото */}
       <div className="md:w-1/2 bg-gray-50 flex items-center justify-center p-6 border-r border-gray-100">
         <img 
           src={book.photoUrl} 
@@ -70,7 +63,6 @@ const BookDetailsPage = () => {
         />
       </div>
 
-      {/* Права колонка: Інфо */}
       <div className="md:w-1/2 p-8 flex flex-col justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">{book.name}</h1>
@@ -111,5 +103,4 @@ const BookDetailsPage = () => {
   );
 };
 
-// 👇 ОСЬ ЦЕЙ РЯДОК ВИПРАВЛЯЄ ПОМИЛКУ
 export default BookDetailsPage;

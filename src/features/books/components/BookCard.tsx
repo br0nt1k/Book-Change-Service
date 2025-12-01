@@ -10,7 +10,6 @@ const BookCard: React.FC<BookCardProps> = ({ book }) => {
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full border border-gray-100">
       
-      {/* Картинка */}
       <div className="h-64 overflow-hidden bg-gray-50 relative group">
         <img 
           src={book.photoUrl} 
@@ -22,7 +21,6 @@ const BookCard: React.FC<BookCardProps> = ({ book }) => {
         />
       </div>
 
-      {/* Інформація */}
       <div className="p-4 flex flex-col flex-grow">
         <h3 className="font-bold text-lg mb-1 text-gray-900 line-clamp-1" title={book.name}>
           {book.name}
