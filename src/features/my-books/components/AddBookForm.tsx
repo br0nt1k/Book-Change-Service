@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { addBook } from '../../../services/booksService';
+import iziToast from 'izitoast';
 
 interface Props {
   onSuccess: () => void;
@@ -17,7 +18,7 @@ const AddBookForm: React.FC<Props> = ({ onSuccess }) => {
     e.preventDefault();
     if (!user) return;
 
-    setLoading(true); 
+    setLoading(true);
 
     try {
       await addBook(name, author, photoUrl, user.uid);
@@ -26,12 +27,24 @@ const AddBookForm: React.FC<Props> = ({ onSuccess }) => {
       setName('');
       setAuthor('');
       setPhotoUrl('');
+      
+      iziToast.success({
+        title: 'Успіх!',
+        message: 'Книгу успішно додано до вашої колекції',
+        position: 'topRight'
+      });
+
       onSuccess(); 
       
     } catch (error) {
       console.error("Error adding book:", error);
-      alert("Помилка при додаванні");
-      setLoading(false); 
+      setLoading(false);
+      
+      iziToast.error({
+        title: 'Помилка',
+        message: 'Не вдалося додати книгу',
+        position: 'topRight'
+      });
     }
   };
 

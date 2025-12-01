@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { fetchAllBooks } from '../../services/booksService';
 import type { IBook } from '../../types';
 import BookCard from './components/BookCard';
+import Spinner from '../../components/ui/Spinner';
 
 const BooksListPage = () => {
   const [books, setBooks] = useState<IBook[]>([]);
@@ -22,12 +23,14 @@ const BooksListPage = () => {
     loadBooks();
   }, []);
 
-  const filteredBooks = books.filter(book => 
-    book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    book.author.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredBooks = books
+    .filter(book => 
+      book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-  if (loading) return <div className="text-center mt-10 text-xl">Завантаження...</div>;
+  if (loading) return <Spinner />;
 
   return (
     <div>
@@ -35,7 +38,7 @@ const BooksListPage = () => {
         <h1 className="text-3xl font-bold text-gray-800">Всі книги</h1>
         <input
           type="text"
-          placeholder="🔍 Пошук..."
+          placeholder="🔍 Пошук за назвою або автором..."
           className="border border-gray-300 rounded-lg px-4 py-2 w-full md:w-96 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
